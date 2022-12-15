@@ -1,0 +1,5 @@
+module WB (
+    ports
+);
+    
+endmodule
