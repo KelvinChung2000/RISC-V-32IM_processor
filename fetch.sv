@@ -3,16 +3,19 @@ module fetch (
     input   logic           reset,
     input   logic           run,
 
-    input   logic           branched_i,
+    //pipeline control
+    input   logic           next_ready_i,
+    output  logic           self_ready_o,
+    input   logic           prev_valid_i,
+    output  logic           self_valid_o, 
+    
     input   logic           stall,
+    input   logic           branched_i,
 
     input   logic [31:0]    pc_i,
     output  logic [31:0]    pc_o,
 
-    output  logic           fetch_vaild_o,
-
-    input   logic [31:0]    pc_debug_i,
-    input   logic           pc_wr_debug_i,
+    output  logic           success_fetch
 );
 
     logic [31:0] pc;
@@ -26,7 +29,7 @@ module fetch (
             if (branched_i) begin
                 pc <= pc_i;
             end else if (!stall) begin
-                pc <= pc + 4;
+                pc <= pc_i + 4;
             end else if (pc_wr_debug_i) begin
                 pc <= pc_debug_i;
             end

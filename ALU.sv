@@ -12,7 +12,7 @@ module ALU (
             ALU_AND:    result_o = operand_A_i & operand_B_i;
             ALU_OR:     result_o = operand_A_i | operand_B_i;
             ALU_XOR:    result_o = operand_A_i ^ operand_B_i;
-            ALU_SLT:    result_o = {31'b0, $signed(operand_A_i) < $signed(operand_B_i)};
+            ALU_SLT:    result_o = {31'b0, signed'(operand_A_i) < signed'(operand_B_i)};
             ALU_SLTU:   result_o = {31'b0, operand_A_i < operand_B_i};
             ALU_SLL:    result_o = operand_A_i << operand_B_i;
             ALU_SRL:    result_o = operand_A_i >> operand_B_i;
@@ -23,8 +23,8 @@ module ALU (
                         end
             ALU_EQ:     result_o = {31'b0, operand_A_i == operand_B_i};
             ALU_NE:     result_o = {31'b0, operand_A_i != operand_B_i};
-            ALU_LT:     result_o = {31'b0, $signed(operand_A_i) < $signed(operand_B_i)};
-            ALU_GE:     result_o = {31'b0, $signed(operand_A_i) >= $signed(operand_B_i)};
+            ALU_LT:     result_o = {31'b0, signed'(operand_A_i) < signed'(operand_B_i)};
+            ALU_GE:     result_o = {31'b0, signed'(operand_A_i) >= signed'(operand_B_i)};
             ALU_LTU:    result_o = {31'b0, operand_A_i < operand_B_i};
             ALU_GEU:    result_o = {31'b0, operand_A_i >= operand_B_i};
             default: result_o = 32'hX;

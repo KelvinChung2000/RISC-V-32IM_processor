@@ -24,6 +24,19 @@ typedef enum logic [6:0] {
         OPCODE_SYSTEM   = 7'b11100_11
     } opcode_e;
 
+// typedef enum { 
+//     LUI,AUIPC,
+//     JAL,JALR,
+//     BEQ,BNE,BLT,BGE,BLTU,BGEU,
+//     LB,LH,LW,LBU,LHU,SB,SH,SW,
+//     ADDI,SLTI,SLTIU,XORI,ORI,ANDI,SLLI,SRLI,SRAI,
+//     ADD,SUB,SLL,SLT,SLTU,XOR,SRL,SRA,OR,AND,
+//     FENCE,FENCE_I,
+//     ECALL,
+//     EBREAK,
+//     CSRRW,CSRRS,CSRRC,CSRRWI,CSRRSI,CSRRCI
+// } I_instr_set_e;
+
 typedef enum {
         INST_TYPE_R,
         INST_TYPE_I,
@@ -142,137 +155,98 @@ typedef enum logic [1:0]{
 
 typedef enum logic [11:0] {
     //Unprivileged Counter/Timers
-    URO_cycle = 12'hC00,
-    URO_time = 12'hC01,
-    URO_instret = 12'hC02,
+    cycle = 12'hC00,
+    utime = 12'hC01,
+    instret = 12'hC02,
 
-    URO_cycleh = 12'hC80,
-    URO_timeh = 12'hC81,
-    URO_instreth = 12'hC82,
+    cycleh = 12'hC80,
+    timeh = 12'hC81,
+    instreth = 12'hC82,
 
     //Supervisor Trap Setup
-    SRW_sstatus = 12'h100,
-    SRW_sie = 12'h104,
-    SRW_stvec = 12'h105,
-    SRW_scounteren = 12'h106,
+    sstatus = 12'h100,
+    sie = 12'h104,
+    stvec = 12'h105,
+    scounteren = 12'h106,
 
     //Supervisor Configuration
-    SRW_senvcfg = 12'h10A,
+    senvcfg = 12'h10A,
 
     //Supervisor Trap Handling
-    SRW_sscratch = 12'h140,
-    SRW_sepc = 12'h141,
-    SRW_scause = 12'h142,
-    SRW_stval = 12'h143,
-    SRW_sip = 12'h144,
+    sscratch = 12'h140,
+    sepc = 12'h141,
+    scause = 12'h142,
+    stval = 12'h143,
+    sip = 12'h144,
 
     //Supervisor Protection and Translation
-    SRW_satp = 12'h180,
+    satp = 12'h180,
 
     //Debug/Trace Registers 
-    SRW_scontext = 12'h5A8,
+    scontext = 12'h5A8,
 
-    //Hypervisor trap setup
-    HRW_hstatus = 12'h600,
-    HRW_hedeleg = 12'h602,
-    HRW_hideleg = 12'h603,
-    HRW_hie = 12'h604,
-    HRW_hcounteren = 12'h606,
-    HRW_hgeie = 12'h607,
-
-    //Hypervisor trap handling
-    HRW_htval = 12'h643,
-    HRW_hip = 12'h644,
-    HRW_hvip = 12'h645,
-    HRW_htinst = 12'h64A,
-    HRO_hgeip = 12'hE12,
-
-    //Hypervisor Configuration
-    HRW_henvcfg = 12'h60A,
-    HRW_henvcfgh = 12'h61A,
-
-    //Hypervisor Protection and Translation
-    HRW_hgatp = 12'h680,
-
-    //Hypervisor Debug/Trace Registers
-    HRW_hcontext = 12'h6A8,
-
-    //Hypervisor Counter/Timers Virtualization Registers
-    HRW_htimedelta = 12'h605,
-    HRW_htimedeltah = 12'h615,
-
-    //Virtrual Supervisor Registers
-    HRW_vsstatus = 12'h200,
-    HRW_vsie = 12'h204,
-    HRW_vstvec = 12'h205,
-    HRW_vsscratch = 12'h240,
-    HRW_vsepc = 12'h241,
-    HRW_vscause = 12'h242,
-    HRW_vstval = 12'h243,
-    HRW_vsip = 12'h244,
-    HRW_vsatp = 12'h280,
 
     //Machine Information Registers
-    MRO_mvenderid = 12'hF11,
-    MRO_marchid = 12'hF12,
-    MRO_mimpid = 12'hF13,
-    MRO_mhartid = 12'hF14,
-    MRO_mconfigptr = 12'hF15,
+    mvenderid = 12'hF11,
+    marchid = 12'hF12,
+    mimpid = 12'hF13,
+    mhartid = 12'hF14,
+    mconfigptr = 12'hF15,
 
     //Machine Trap Setup
-    MRW_mstatus = 12'h300,
-    MRW_misa = 12'h301,
-    MRW_medeleg = 12'h302,
-    MRW_mideleg = 12'h303,
-    MRW_mie = 12'h304,
-    MRW_mtvec = 12'h305,
-    MRW_mcounteren = 12'h306,
-    MRW_mstatush = 12'h310,
+    mstatus = 12'h300,
+    misa = 12'h301,
+    medeleg = 12'h302,
+    mideleg = 12'h303,
+    mie = 12'h304,
+    mtvec = 12'h305,
+    mcounteren = 12'h306,
+    mstatush = 12'h310,
 
     //Machine Trap Handling
-    MRW_mscratch = 12'h340,
-    MRW_mepc = 12'h341,
-    MRW_mcause = 12'h342,
-    MRW_mtval = 12'h343,
-    MRW_mip = 12'h344,
-    MRW_mtinst = 12'h34A,
-    MRW_mtval2 = 12'h34B,
+    mscratch = 12'h340,
+    mepc = 12'h341,
+    mcause = 12'h342,
+    mtval = 12'h343,
+    mip = 12'h344,
+    mtinst = 12'h34A,
+    mtval2 = 12'h34B,
 
     //Machine Configuration
-    MRW_menvcfg = 12'h30A,
-    MRW_menvcfgh = 12'h31A,
-    MRW_mseccfg = 12'h747,
-    MRW_msecfgh = 12'h757,
+    menvcfg = 12'h30A,
+    menvcfgh = 12'h31A,
+    mseccfg = 12'h747,
+    msecfgh = 12'h757,
 
     //Machine Memory Protection
-    MRW_pmpcfg_start = 12'h3A0,
-    MRW_pmpaddr_start = 12'h3B0,
+    pmpcfg_start = 12'h3A0,
+    pmpaddr_start = 12'h3B0,
 
     //Machine Counter/Timers
-    MRW_mcycle = 12'hB00,
-    MRW_minstret = 12'hB02,
-    MRW_mcycleh = 12'hB80,
-    MRW_minstreth = 12'hB81,
+    mcycle = 12'hB00,
+    minstret = 12'hB02,
+    mcycleh = 12'hB80,
+    minstreth = 12'hB81,
 
     //Machine Counter Setup
-    MRW_mcountinhibit = 12'h120,
+    mcountinhibit = 12'h120,
 
     //Degug/Trace Registers
-    MRW_tselect = 12'h7A0,
-    MRW_tdata1 = 12'h7A1,
-    MRW_tdata2 = 12'h7A2,
-    MRW_tdata3 = 12'h7A3,
-    MRW_mcontext = 12'h7A8,
+    tselect = 12'h7A0,
+    tdata1 = 12'h7A1,
+    tdata2 = 12'h7A2,
+    tdata3 = 12'h7A3,
+    mcontext = 12'h7A8,
 
     //Debug Mdoe Registers
-    DRW_dcsr = 12'h7B0,
-    DRW_dpc = 12'h7B1,
-    DRW_dscratch = 12'h7B2,
-    DRW_dscratch1 = 12'h7B3,
+    dcsr = 12'h7B0,
+    dpc = 12'h7B1,
+    dscratch = 12'h7B2,
+    dscratch1 = 12'h7B3,
 
     SRET = 12'b000_00010,
     MRET = 12'b000_00010,
-    WFI  = 12'b000_00101,
+    WFI  = 12'b000_00101
 } csr_e;
 
 typedef enum logic [1:0] { 
@@ -282,19 +256,12 @@ typedef enum logic [1:0] {
     come_dirty = 2'b11
 } csr_mstatus_XS_e;
 
-typedef enum logic [1:0] { 
-    off = 2'b00,
-    initial = 2'b01,
-    claen = 2'b10,
-    dirty = 2'b11
-} csr_mstatus_FS_e;
-
-typedef enum logic [1:0] { 
-    off = 2'b00,
-    initial = 2'b01,
-    claen = 2'b10,
-    dirty = 2'b11
-} csr_mstatus_VS_e;
+// typedef enum logic [1:0] { 
+//     off = 2'b00,
+//     init = 2'b01,
+//     claen = 2'b10,
+//     dirty = 2'b11
+// } csr_mstatus_S_e;
 
 
 typedef enum { 
@@ -309,7 +276,7 @@ typedef enum {
     MPP0=11,
     SPP=8,      //supervisor previous privilege mode
     MPIE=7,     //machine level previous interrupt enable
-    UBE=6
+    UBE=6,
     SPIE=5,     //supervisor level previous interrupt enable
     MIE=3,      //global machine level interrupt enable
     SIE=1       //global supervisor level interrupt enable
@@ -376,5 +343,12 @@ typedef enum {
     IR=2,
     HPM3=3
 } mcounteren_field_e;
+
+typedef enum {
+    A=0,
+    I=8,
+    S=18,
+    U=20
+} misa_e;
 
 endpackage

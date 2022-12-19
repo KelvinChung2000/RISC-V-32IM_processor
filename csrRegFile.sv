@@ -12,36 +12,33 @@ module csrRegFile
     output  logic [31:0]            csr_data_o,
 
     input   logic [31:0]            mhartid_i,
-    input   logic                   external_interrupt_i,
-    input   logic                   timer_interrupt_i,
-    input   logic                   software_interrupt_i,
+    input   logic                   m_external_interrupt_i,
+    input   logic                   m_timer_interrupt_i,
+    input   logic                   m_software_interrupt_i,
 
     output  logic                   global_m_interrupt_en_o,
     output  logic                   global_s_interrupt_en_o,
 
-    
-    input   logic [31:0]            exception_pc_i,
-    input   logic [31:0]            trap_casue_i,
-    input   logic [31:0]            trap_val_i,
+    //machine status
+    output  logic [31:0]            mstatus_o,
+    output  logic [31:0]            mstatush_o,
+    output  logic [31:0]            misa_o,
     
     //exception and trap
-    input   logic                   exception_pc_i,
+    input   logic [31:0]            exception_pc_i,
+    input   logic [31:0]            trap_cause_i,
+    input   logic [31:0]            trap_val_i,
     output  logic [31:0]            trap_base_addr_o,
     output  logic [1:0]             trap_mode_o,
-    output  logic [31:0]            mscratch_o,
-    output  logic [31:0]            exception_pc_o,
-    output  logic [31:0]            trap_cause_o,
-    output  logic [31:0]            trap_val_o,
     output  logic [31:0]            medeleg_o,
 
     //interrupt
     output  logic [31:0]            mie_o,
     output  logic [31:0]            mip_o,
-    output  logic [31:0]            mideleg_o,     
     
     //performance counter
     input  logic                    cycle_i,
-    input  logic                    instret_i, 
+    input  logic                    instret_i
 
 );
 import core_package::*;
@@ -61,6 +58,7 @@ logic [31:0] mscratch = 32'h00000000;
 logic [31:0] mepc = 32'h00000000;
 logic [31:0] mcause = 32'h00000000;
 logic [31:0] mtval = 32'h00000000;
+logic [31:0] mtvec = 32'h00000000;
 
 assign misa =     (0                 <<  0)  // A - Atomic Instructions extension
                 | (0                 <<  1)  // B - Bit-Manipulation extension
@@ -78,16 +76,15 @@ assign misa =     (0                 <<  0)  // A - Atomic Instructions extensio
 
 assign global_m_interrupt_en_o = mstatus[MIE];
 assign global_s_interrupt_en_o = mstatus[SIE];
-assign mips[MEIP] = external_interrupt_i;
-assign mips[MTIP] = timer_interrupt_i;
-assign mips[MSIP] = software_interrupt_i;
+assign mip[MEIP] = external_interrupt_i;
+assign mip[MTIP] = timer_interrupt_i;
+assign mip[MSIP] = software_interrupt_i;
 assign cycle_en = mcounteren[CY];
 assign instret_en = mcounteren[IR];
 assign time_en = mcounteren[TM];
 assign mscratch_o = mscratch;
-assign mepc = exception_pc_i;
-assign exception_pc_o = mepc & 32'hFFFFFFFE;
-assign trap_cause_o = mcause;
+assign mepc = exception_pc_i & 32'hFFFFFFFE;
+assign mcause = trap_cause_i;
 assign mtval = trap_val_i;
 assign trap_val_o = mtval;
 assign mie_o = mie;
@@ -126,21 +123,51 @@ end
 always_comb
 begin
     case (csr_addr)
-        CSR_MISA:       csr_data_o = misa;
-        CSR_MVENDORID:  csr_data_o = `VENDOR_ID;
-        CSR_MARCHID:    csr_data_o = `ARCH_ID;
-        CSR_MIMPLID:    csr_data_o = `IMPLEMENTATION_ID;
-        CSR_MHARTID:    csr_data_o = mhartid_i;
-        CSR_MSTATUS:    csr_data_o = mstatus;
-        CSR_MSTATUSH:   csr_data_o = mstatush;
-        CSR_MEDELEG:    csr_data_o = medeleg;
-        CSR_MIDELEG:    csr_data_o = mideleg;
-        CSR_MIP:        csr_data_o = mip;
-        CSR_MIE:        csr_data_o = mie;
-        CSR_MCYCLE:     csr_data_o = mcycle;
-        CSR_MINSTRET:   csr_data_o = minstret;
+        CSR_MISA:           csr_data_o = misa;
+        CSR_MVENDORID:      csr_data_o = `VENDOR_ID;
+        CSR_MARCHID:        csr_data_o = `ARCH_ID;
+        CSR_MIMPLID:        csr_data_o = `IMPLEMENTATION_ID;
+        CSR_MHARTID:        csr_data_o = mhartid_i;
+        CSR_MSTATUS:        csr_data_o = mstatus;
+        CSR_MSTATUSH:       csr_data_o = mstatush;
+        CSR_MEDELEG:        csr_data_o = medeleg;
+        CSR_MIDELEG:        csr_data_o = mideleg;
+        CSR_MIP:            csr_data_o = mip;
+        CSR_MIE:            csr_data_o = mie;
+        CSR_MCOUNTEREN:     csr_data_o = mcounteren;
+        CSR_MCOUNTINHIBIT:  csr_data_o = mcountinhibit;
+        CSR_MCYCLE:         csr_data_o = mcycle;
+        CSR_MINSTRET:       csr_data_o = minstret;
+        CSR_MSCRATCH:       csr_data_o = mscratch;
+        CSR_MEPC:           csr_data_o = mepc;
+        CSR_MCAUSE:         csr_data_o = mcause;
+        CSR_MTVAL:          csr_data_o = mtval;
+        CSR_MTVEC:          csr_data_o = mtvec;
         default:        csr_data_o = 32'hX;
     endcase
+end
+
+//write logic
+always_ff @(posedge clk)
+begin
+    if (csr_write_i)
+    begin
+        case (csr_addr)
+            CSR_MSTATUS:        mstatus = csr_data_i;
+            CSR_MSTATUSH:       mstatush = csr_data_i;
+            CSR_MEDELEG:        medeleg = csr_data_i;
+            CSR_MIDELEG:        mideleg = csr_data_i;
+            CSR_MIP:            mip = csr_data_i;
+            CSR_MIE:            mie = csr_data_i;
+            CSR_MCOUNTEREN:     mcounteren = csr_data_i;
+            CSR_MCOUNTINHIBIT:  mcountinhibit = csr_data_i;
+            CSR_MSCRATCH:       mscratch = csr_data_i;
+            CSR_MEPC:           mepc = csr_data_i;
+            CSR_MTVAL:          mtval = csr_data_i;
+            CSR_MTVEC:          mtvec = csr_data_i;
+            default:        csr_data_o = 32'hX;
+        endcase
+    end
 end
 
 endmodule

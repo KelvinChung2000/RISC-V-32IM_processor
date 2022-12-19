@@ -9,10 +9,8 @@ module csr
     input   core_package::csr_e csr_i,
     input   logic [31:0]        csr_data_i,
 
-    output  core_package::csr_e csr_o,
     output  logic [31:0]        new_csr_data_o,
-    output  logic [31:0]        old_csr_data_o,
-    output  logic               csr_w_en_o 
+    output  logic [31:0]        old_csr_data_o
 );
 
 import core_package::*;
@@ -21,42 +19,41 @@ logic [31:0] csr_data;
 csr_e csr_addr;
 logic [31:0] old_csr_data;
 
-assign csr_o = csr_i;
 assign old_csr_data_o = old_csr_data;
 
 always_comb begin
     unique case (funct3)
     CSRRW:  begin
-                if (rd == 4'b0)
+                if (rd == 5'b0)
                     new_csr_data_o = 32'b0;
                 else
                     new_csr_data_o = rs1_data_i;
             end
     CSRRS:  begin
-                if (rs1_data == 4'b0 && rs1 != 4'b0) //if rs1_data is 0 then try write itself back
+                if (rs1_data_i == 32'b0 && rs1 != 5'b0) //if rs1_data is 0 then try write itself back
                     new_csr_data_o = csr_data_i;
                 else
                     new_csr_data_o = csr_data_i | rs1_data_i;
             end
     CSRRC:  begin
-                if (rs1_data == 4'b0 && rs1 != 4'b0) //if rs1_data is 0 then try write itself back
+                if (rs1_data_i == 32'b0 && rs1 != 5'b0) //if rs1_data is 0 then try write itself back
                     new_csr_data_o = csr_data_i;
                 else
                     new_csr_data_o = csr_data_i & ~rs1_data_i;
             end
     CSRRWI: begin
-                if (rd == 4'b0)
+                if (rd == 5'b0)
                     new_csr_data_o = 32'b0;
                 else
                     new_csr_data_o = csr_data_i;
             end
     CSRRSI: begin
                 if (rs1 != 5'b0) 
-                    new_csr_data_o = csr_data_i | {26'b0, rs1};
+                    new_csr_data_o = csr_data_i | {27'b0, rs1};
             end
     CSRRCI: begin
                 if (rs1 != 5'b0) 
-                    new_csr_data_o = csr_data_in | {26'b0, rs1};
+                    new_csr_data_o = csr_data_i | {27'b0, rs1};
             end
     default:    begin
                     new_csr_data_o = 32'bX;
@@ -66,11 +63,7 @@ end
 
 always_ff @(posedge clk)
     begin
-        csr_w_en_o <= 1'b1; 
         old_csr_data <= csr_data_i;
     end
-    
-always_ff @(negedge clk)
-    csr_w_en <= 1'b0;
 
 endmodule
