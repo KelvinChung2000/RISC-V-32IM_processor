@@ -1,8 +1,8 @@
 package core_package;
 
 typedef enum logic [3:0] {
-    fetch,
-    decode,
+    fetch, 
+    decode,  
     execute,
     memory,
     WB,
@@ -12,15 +12,15 @@ typedef enum logic [3:0] {
 
 typedef enum logic [6:0] {
         OPCODE_LOAD     = 7'b00000_11,
-        OPCODE_MISC_MEM = 7'b00011_11,
-        OPCODE_OP_IMM   = 7'b00100_11,
-        OPCODE_AUIPC    = 7'b00101_11,
-        OPCODE_STORE    = 7'b01000_11,
-        OPCODE_OP       = 7'b01100_11,
-        OPCODE_LUI      = 7'b01101_11,
-        OPCODE_BRANCH   = 7'b11000_11,
-        OPCODE_JALR     = 7'b11001_11,
-        OPCODE_JAL      = 7'b11011_11,
+        OPCODE_MISC_MEM = 7'b00011_11, 
+        OPCODE_OP_IMM   = 7'b00100_11,  
+        OPCODE_AUIPC    = 7'b00101_11, 
+        OPCODE_STORE    = 7'b01000_11, 
+        OPCODE_OP       = 7'b01100_11, 
+        OPCODE_LUI      = 7'b01101_11, 
+        OPCODE_BRANCH   = 7'b11000_11, 
+        OPCODE_JALR     = 7'b11001_11, 
+        OPCODE_JAL      = 7'b11011_11, 
         OPCODE_SYSTEM   = 7'b11100_11
     } opcode_e;
 
@@ -38,15 +38,15 @@ typedef enum logic [6:0] {
 // } I_instr_set_e;
 
 typedef enum {
-        INST_TYPE_R,
-        INST_TYPE_I,
-        INST_TYPE_S,
-        INST_TYPE_B,
-        INST_TYPE_U,
-        INST_TYPE_J,
-        INST_TYPE_SYSTEM,
-        INST_TYPE_UNKNOWN
-} inst_type_e;
+        INSTR_TYPE_R,
+        INSTR_TYPE_I,
+        INSTR_TYPE_S,
+        INSTR_TYPE_B,
+        INSTR_TYPE_U,
+        INSTR_TYPE_J,
+        INSTR_TYPE_SYSTEM,
+        INSTR_TYPE_UNKNOWN
+} instr_type_e;
 
 typedef enum {
         ALU_ADD,
@@ -147,10 +147,10 @@ typedef enum logic [2:0] {
 
 
 typedef enum logic [1:0]{
-    user_mode = 2'b00,
-    supervisor_mode = 2'b01,
-    hypervisor_mode = 2'b10,
-    machine_mode = 2'b11
+    u_mode = 2'b00,
+    s_mode = 2'b01,
+    h_mode = 2'b10,
+    m_mode = 2'b11
 } machine_mode_e;
 
 typedef enum logic [11:0] {
@@ -216,7 +216,7 @@ typedef enum logic [11:0] {
     menvcfg = 12'h30A,
     menvcfgh = 12'h31A,
     mseccfg = 12'h747,
-    msecfgh = 12'h757,
+    mseccfgh = 12'h757,
 
     //Machine Memory Protection
     pmpcfg_start = 12'h3A0,
@@ -244,8 +244,7 @@ typedef enum logic [11:0] {
     dscratch = 12'h7B2,
     dscratch1 = 12'h7B3,
 
-    SRET = 12'b000_00010,
-    MRET = 12'b000_00010,
+    SM_RET = 12'b000_00010,
     WFI  = 12'b000_00101
 } csr_e;
 
@@ -307,12 +306,12 @@ typedef enum {
 } mie_field_e;
 
 typedef enum logic [7:0]{
-    supervisor_software_interrupt = 1,
-    machine_soft_interrupt = 3,
-    supervisor_timer_interrupt = 5,
-    machine_timer_interrupt = 7,
-    supervisor_external_interrupt = 9,
-    machine_external_interrupt = 11
+    s_s_interrupt = 1,
+    m_s_interrupt = 3,
+    s_t_interrupt = 5,
+    m_t_interrupt = 7,
+    s_e_interrupt = 9,
+    m_e_interrupt = 11
 } mcause_interrupt_e;
 
 typedef enum logic [7:0] {

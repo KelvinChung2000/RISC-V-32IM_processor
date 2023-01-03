@@ -10,23 +10,20 @@ module decode (
     
     //contorl unit signal
     input   logic                           stall_i,
-    input   logic                           flush_i,
 
     //unit function signal
-    input   logic [31:0]                    instr,
+    input   logic [31:0]                    instr_i,
     input   core_package::machine_mode_e    machine_mode_i,
     input   logic [31:0]                    misa_i,
 
     output  core_package::opcode_e          opcode_o,
     output  core_package::alu_op_e          alu_op_o,
-    output  core_package::inst_type_e       i_type_o,
+    output  core_package::instr_type_e      instr_type_o,
     output  logic                           illegal_instr_o,
     output  logic [4:0]                     rd_o,
-    output  logic [2:0]                     funct3_o,
-    output  logic                           rs1_rd_en_o,
     output  logic [4:0]                     rs1_o,
-    output  logic                           rs2_rd_en_o,
     output  logic [4:0]                     rs2_o,
+    output  logic [2:0]                     funct3_o,
     output  logic [6:0]                     funct7_o,
     output  logic [31:0]                    imm_o,
     output  logic [3:0]                     fence_pred_o,
@@ -39,9 +36,10 @@ module decode (
     import core_package::*;
 
     logic illegal_instr = 1'b0;
-    logic [6:0] opcode; 
+    opcode_e opcode; 
     alu_op_e alu_op;
-    inst_type_e i_type;
+    instr_type_e i_type;
+    logic [31:0] instr;
     logic [4:0] rd;
     logic [2:0] funct3;
     logic [4:0] rs1;
@@ -54,105 +52,76 @@ module decode (
     logic [31:0] shamt;
     logic [31:0] zimm;
     csr_e csr;
+    logic illegal_csr;
+    logic valid;
+    logic prev_valid;
 
-    assign self_valid_o = !stall_i && prev_valid_i;
-    assign self_ready_o = !stall_i && !illegal_instr;
+    assign self_ready_o = !stall_i;
+    assign illegal_instr_o = illegal_instr || illegal_csr;
 
-    assign opcode = instr[6:0];
+    assign opcode = opcode_e'(instr[6:0]);
+    assign rd = instr[11:7];
+    assign funct3 = instr[14:12];
+    assign rs1 = instr[19:15];
+    assign rs2 = instr[24:20];
+    assign funct7 = instr[31:25];
+    assign fence_pred = instr[27:24];
+    assign fence_succ = instr[23:20];
+    assign shamt = { {27{instr[24]}} ,instr[24:20]} ;
+    assign zimm = {27'b0, instr[19:15]};
+    assign csr_val = csr_e'(instr[31:20]);
+
 
     // get the bit field of the instruction
     always_comb begin : partition
         unique case (opcode)
             OPCODE_LOAD: begin
-                rd = instr[11:7];
-                funct3 = instr[14:12];
-                rs1 = instr[19:15];
                 imm = { {12{instr[31]}}, instr[31:12] };
-                i_type = INST_TYPE_I;
+                i_type = INSTR_TYPE_I;
             end
             OPCODE_MISC_MEM: begin
-                rd = instr[11:7];
-                funct3 = instr[14:12];
-                rs1 = instr[19:15];
-                fence_pred = instr[27:24];
-                fence_succ = instr[23:20];
-                i_type = INST_TYPE_SYSTEM;
+                imm = 32'b0;
+                i_type = INSTR_TYPE_SYSTEM;
             end
             OPCODE_OP_IMM: begin
-                rd = instr[11:7];
-                funct3 = instr[14:12];
-                funct7 = instr[31:25];
-                shamt = { {27{instr[24]}} ,instr[24:20]} ;
                 imm = { {20{instr[31]}}, instr[31:20] };
-                i_type = INST_TYPE_I;
+                i_type = INSTR_TYPE_I;
             end
             OPCODE_AUIPC: begin
-                rd = instr[11:7];
                 imm = {instr[31:12], 12'b0};
-                i_type = INST_TYPE_U;
+                i_type = INSTR_TYPE_U;
             end
             OPCODE_STORE: begin
-                rd = instr[11:7];
-                funct3 = instr[14:12];
-                rs1 = instr[19:15];
-                rs2 = instr[24:20];
                 imm = { {20{instr[31]}}, instr[31:25], instr[11:7] };
-                i_type = INST_TYPE_S;
+                i_type = INSTR_TYPE_S;
             end
             OPCODE_OP: begin
-                rd = instr[11:7];
-                funct3 = instr[14:12];
-                rs1 = instr[19:15];
-                rs2 = instr[24:20];
-                funct7 = instr[31:25];
-                i_type = INST_TYPE_R;
+                imm = 32'b0;
+                i_type = INSTR_TYPE_R;
             end
             OPCODE_LUI: begin
-                rd = instr[11:7];
                 imm = {instr[31:12], 12'b0};
-                i_type = INST_TYPE_U;
+                i_type = INSTR_TYPE_U;
             end
             OPCODE_BRANCH: begin
-                rd = instr[11:7];
-                funct3 = instr[14:12];
-                rs1 = instr[19:15];
-                rs2 = instr[24:20];
                 imm = { {20{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8] };
-                i_type = INST_TYPE_B;
+                i_type = INSTR_TYPE_B;
             end
             OPCODE_JALR: begin
-                rd = instr[11:7];
-                funct3 = instr[14:12];
-                rs1 = instr[19:15];
                 imm = { {20{instr[31]}}, instr[31:20]};
-                i_type = INST_TYPE_I;
+                i_type = INSTR_TYPE_I;
             end
             OPCODE_JAL: begin
-                rd = instr[11:7];
                 imm = { {11{instr[31]}}, instr[31], instr[19:12], instr[20], instr[30:21], 1'b0 };
-                i_type = INST_TYPE_J;
+                i_type = INSTR_TYPE_J;
             end
             OPCODE_SYSTEM: begin
-                rd = instr[11:7];
-                funct3 = instr[14:12];
-                rs1 = instr[19:15];
-                zimm = {27'b0, instr[19:15]};
-                csr_val = csr_e'(instr[31:20]);
-                i_type = INST_TYPE_SYSTEM;
+                imm = 32'b0;
+                i_type = INSTR_TYPE_SYSTEM;
             end
             default: begin
-                rd = 5'bx;
-                funct3 = 3'bx;
-                rs1 = 5'bx;
-                rs2 = 5'bx;
-                funct7 = 7'bx;
                 imm = 32'bx;
-                fence_pred = 4'bx;
-                fence_succ = 4'bx;
-                csr = 12'bx;
-                shamt = 32'bx;
-                zimm = 32'bx;
-                i_type = INST_TYPE_UNKNOWN;
+                i_type = INSTR_TYPE_UNKNOWN;
             end
         endcase
     end
@@ -220,8 +189,9 @@ module decode (
                                    fence_pred != 4'b0000 && 
                                    fence_succ != 4'b0000);
             OPCODE_OP_IMM: 
-                illegal_instr = (funct7 != 7'b0000000) || 
-                                (funct7 != 7'b0100000);
+                illegal_instr = (funct3 == SLLI && funct7 != 7'b0000000) || 
+                                (funct3 == SR_LA_I && 
+                                (funct7 != 7'b0100000 || funct7 != 7'b0000000));
             OPCODE_AUIPC: 
                 illegal_instr = 1'b0;
             OPCODE_STORE: 
@@ -244,7 +214,7 @@ module decode (
                 begin
                     illegal_instr = (funct3 == 3'b100)                                          ||
                                     (funct3 == 3'b000 && (csr != 12'b0 || csr == 12'b1))        ||
-                                    !(csr_val inside {csr_enum})                                ||
+                                    // !(csr_val inside {csr_enum})                                 ||
                                     (funct3 == CSRRW && csr[11:10] == 2'b11)                    ||
                                     (funct3 == CSRRS && csr[11:10] == 2'b11 && rs1 != 5'b0)     ||
                                     (funct3 == CSRRC && csr[11:10] == 2'b11 && rs1 != 5'b0)     ||
@@ -258,11 +228,74 @@ module decode (
         endcase
     end 
 
+    //illegal csr check
+    always_comb begin : csr_check
+        if (opcode == OPCODE_SYSTEM)
+        unique case (csr)
+                cycle   : illegal_csr = 1'b0;
+                utime   : illegal_csr = 1'b0;
+                instret : illegal_csr = 1'b0;
+                cycleh  : illegal_csr = 1'b0;
+                timeh   : illegal_csr = 1'b0;
+                instreth: illegal_csr = 1'b0;
+                sstatus : illegal_csr = 1'b0;
+                stvec   : illegal_csr = 1'b0;
+                sscratch: illegal_csr = 1'b0;
+                sepc    : illegal_csr = 1'b0;
+                scause  : illegal_csr = 1'b0;
+                stval   : illegal_csr = 1'b0;
+                sip     : illegal_csr = 1'b0;
+                satp    : illegal_csr = 1'b0;
+                scontext: illegal_csr = 1'b0;
+                mvenderid: illegal_csr = 1'b0;
+                marchid  : illegal_csr = 1'b0;
+                mimpid   : illegal_csr = 1'b0;
+                mhartid  : illegal_csr = 1'b0;
+                mconfigptr: illegal_csr = 1'b0;
+                mstatus  : illegal_csr = 1'b0;
+                misa     : illegal_csr = 1'b0;
+                medeleg  : illegal_csr = 1'b0;
+                mideleg  : illegal_csr = 1'b0;
+                mie      : illegal_csr = 1'b0;
+                mtvec    : illegal_csr = 1'b0;
+                mcounteren: illegal_csr = 1'b0;
+                mscratch : illegal_csr = 1'b0;
+                mepc     : illegal_csr = 1'b0;
+                mcause   : illegal_csr = 1'b0;
+                mtval    : illegal_csr = 1'b0;
+                mip      : illegal_csr = 1'b0;
+                menvcfg : illegal_csr = 1'b0;
+                menvcfgh  : illegal_csr = 1'b0;
+                mseccfg : illegal_csr = 1'b0;
+                mseccfgh  : illegal_csr = 1'b0;
+                pmpcfg_start: illegal_csr = 1'b0;
+                pmpaddr_start: illegal_csr = 1'b0;
+                mcycle   : illegal_csr = 1'b0;
+                minstret : illegal_csr = 1'b0;
+                mcycleh  : illegal_csr = 1'b0;
+                minstreth: illegal_csr = 1'b0;
+                mcountinhibit: illegal_csr = 1'b0;
+                tselect  : illegal_csr = 1'b0;
+                tdata1   : illegal_csr = 1'b0;
+                tdata2   : illegal_csr = 1'b0;
+                tdata3   : illegal_csr = 1'b0;
+                mcontext: illegal_csr = 1'b0;
+                dcsr     : illegal_csr = 1'b0;
+                dpc      : illegal_csr = 1'b0;
+                dscratch: illegal_csr = 1'b0;
+                dscratch1: illegal_csr = 1'b0;
+                default : illegal_csr = 1'b1;
+        endcase
+        else
+            illegal_csr = 1'b0;
+    end
+
+    assign valid = !stall_i && prev_valid_i;
     always_ff @(posedge clk, posedge reset) begin
         if (reset)
         begin
-            illegal_instr   <= 1'b0;
             alu_op_o        <= ALU_ADD;
+            opcode_o        <= OPCODE_OP;
             rd_o            <= 5'b0;
             funct3_o        <= 3'b0;
             rs1_o           <= 5'b0;
@@ -277,10 +310,13 @@ module decode (
         end
         else 
         begin
-            if (next_ready_i && self_valid_o)
+            self_valid_o <= valid;
+            instr <= instr_i;
+            if (valid && next_ready_i)
             begin
-                illegal_instr_o     <= illegal_instr;
+                opcode_o            <= opcode;
                 alu_op_o            <= alu_op;
+                instr_type_o        <= i_type; 
                 rd_o                <= rd;
                 funct3_o            <= funct3;
                 rs1_o               <= rs1;
@@ -293,23 +329,6 @@ module decode (
                 shamt_o             <= shamt;
                 zimm_o              <= zimm;
             end
-            else
-            begin
-                illegal_instr_o     <= illegal_instr_o;
-                alu_op_o            <= alu_op;
-                rd_o                <= rd_o;
-                funct3_o            <= funct3_o;
-                rs1_o               <= rs1_o;
-                rs2_o               <= rs2_o;
-                funct7_o            <= funct7_o;
-                imm_o               <= imm_o;
-                fence_pred_o        <= fence_pred_o;
-                fence_succ_o        <= fence_succ_o;
-                csr_o               <= csr_o;
-                shamt_o             <= shamt_o;
-                zimm_o              <= zimm_o;
-            end
-              
         end
     end
 

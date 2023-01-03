@@ -21,7 +21,7 @@ logic [31:0] old_csr_data;
 
 assign old_csr_data_o = old_csr_data;
 
-always_comb begin
+always_comb begin : csr_instruction_handler
     unique case (funct3)
     CSRRW:  begin
                 if (rd == 5'b0)
@@ -50,10 +50,14 @@ always_comb begin
     CSRRSI: begin
                 if (rs1 != 5'b0) 
                     new_csr_data_o = csr_data_i | {27'b0, rs1};
+                else
+                    new_csr_data_o = csr_data_i;
             end
     CSRRCI: begin
                 if (rs1 != 5'b0) 
                     new_csr_data_o = csr_data_i | {27'b0, rs1};
+                else
+                    new_csr_data_o = csr_data_i;
             end
     default:    begin
                     new_csr_data_o = 32'bX;

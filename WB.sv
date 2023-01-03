@@ -19,26 +19,25 @@ module WB (
     output  logic [31:0]            rd_data_o
 );
 
-logic valid_o;
 logic self_ready;
 logic self_valid;
+logic valid;
+logic prev_valid;
 
-assign valid_o = !stall_i && prev_valid_i && next_ready_i;
-assign self_ready = !stall_i && prev_valid_i && next_ready_i;
-assign self_valid = !stall_i && prev_valid_i && next_ready_i;
-
-assign rd_addr_o = rd_addr_i;
-assign rd_data_o = rd_data_i;
+assign valid = !stall_i && prev_valid_i && next_ready_i;
+assign self_ready_o = !stall_i && next_ready_i;
 
 always_ff @(posedge clk ) begin : write_back
+    self_valid_o <= valid;
     if (reset) begin
-        self_ready_o <= 1'b0;
         self_valid_o <= 1'b0;
         rd_en <= 1'b0;
     end 
-    else if (valid_o) 
+    else if (valid) 
     begin
         rd_en <= 1'b1;
+        rd_addr_o <= rd_addr_i;
+        rd_data_o <= rd_data_i;
     end
     else
     begin

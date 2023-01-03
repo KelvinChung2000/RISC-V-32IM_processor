@@ -1,11 +1,11 @@
-module registers
+module registerFile
     (
         input  logic           clk,
         input  logic           reset,
         
         // control signals
-        input  logic           stall_reg_rd,
-        input  logic           stall_reg_wr,
+        input  logic           reg_rd_stall,
+        input  logic           reg_wr_stall,
 
         // unit function signals
         input  logic           rd_rs1_en,
@@ -25,7 +25,7 @@ logic [31:0] registers [1:31];
 
 always_ff @(posedge clk)
     begin
-        if (!stall_reg_rd)
+        if (!reg_rd_stall)
             begin
                 if (rd_rs1_en)
                     if (rs1_address == 5'h00) 
